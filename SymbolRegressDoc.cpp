@@ -10,6 +10,7 @@
 #define new DEBUG_NEW
 #endif
 
+#include "FitnessClass.h"
 #include "DNAStatement.h"
 #include "EvaluatingFunction.h"
 #include "RegressTreeDlg.h"
@@ -17,8 +18,6 @@
 #include "GraphView.h"
 #include "SettingsDialog.h"
 
-
-#include "FitnessClass.h" // Stephane
 
 #ifdef _DEBUG
 
@@ -49,16 +48,6 @@ BEGIN_MESSAGE_MAP(CSymbolRegressDoc, CDocument)
 	 ON_COMMAND(ID_GO, onGo)
 	 ON_COMMAND(ID_STOP, OnStop)
 	ON_COMMAND(ID_SETTINGS, OnSettings)
-	//ID_FILE_SEND_MAIL
-	ON_COMMAND(FUNC0, makeEvaluatingFunction0)
-	ON_COMMAND(FUNC1, makeEvaluatingFunction1)
-	ON_COMMAND(FUNC2, makeEvaluatingFunction2)
-	ON_COMMAND(FUNC3, makeEvaluatingFunction3)
-	ON_COMMAND(FUNC4, makeEvaluatingFunction4)
-	ON_COMMAND(FUNC5, makeEvaluatingFunction5)
-	ON_COMMAND(FUNC6, makeEvaluatingFunction6)
-	ON_COMMAND(FUNC7, makeEvaluatingFunction7)
-	ON_COMMAND(FUNC8, makeEvaluatingFunction8)
 END_MESSAGE_MAP()
 
 
@@ -72,15 +61,15 @@ void CSymbolRegressDoc::UpdateGraph(){
 CSymbolRegressDoc::CSymbolRegressDoc(
 				     COUNTER Popsize, COUNTER SelSize, 
 				     COUNTER maxdeth, COUNTER CMaxDep,
-				     double MProb, COUNTER treeDensity,
-				     COUNTER m_FuncNum):
+				     double MProb, COUNTER treeDensity):
 m_FullPopulationSize(Popsize), SelectionSize(SelSize), MaxDepth(maxdeth), 
 CrossMaxDepth(CMaxDep), MutProb(MProb), TreeDensity(treeDensity),
 m_CurrentIndividual(0) , generationCount(0), running(false), m_BestIndex(0),
 EvalFunc(NULL), RangeMin(-1.0f), RangeMax(1.0f), m_CaseCount(60),
-m_Graph(NULL), m_funcNum(){
-	makeEvaluatingFunction(m_FuncNum);
-
+m_Graph(NULL){
+	
+	makePopulation();
+	makeEvaluatingFunction();
 }
 
 CSymbolRegressDoc::~CSymbolRegressDoc(){
@@ -97,10 +86,6 @@ BOOL CSymbolRegressDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument())
 		return FALSE;
-
-	//for(COUNTER i=0; i<FUNCNUM; i++){
-	
-	//}
 	return TRUE;
 }
 
@@ -112,7 +97,7 @@ void CSymbolRegressDoc::Serialize(CArchive& ar)
 {
 	if (ar.IsStoring())
 	{
-		ar<<this->m_Population[this->m_BestIndex]->toString();
+		// TODO: add storing code here
 	}
 	else
 	{
@@ -147,7 +132,6 @@ void CSymbolRegressDoc::makeTreeDialog(){
 			try{
 				CRegressTreeDlg TreeDlg(NULL, this->m_Population[this->m_CurrentIndividual]);
 				TreeDlg.DoModal();
-				this->UpdateAllViews(NULL);
 			}catch(CString Mssg){}
 		}
 		else
@@ -162,32 +146,10 @@ void CSymbolRegressDoc::makeTreeDialog(){
 /****************************************
 Evaluation Methods
 ****************************************/
-
-double CSymbolRegressDoc::getTotalFitness(){
-	double Total = 0.0f;
-	for(COUNTER i=0; i<this->m_Population.size();i++)
-		if(m_Population[i])
-			Total += m_Population[i]->getFitness();
-	return Total;
-}
-
-void CSymbolRegressDoc::normalizeFitness(){
-	double Total = getTotalFitness();
-	for(COUNTER i=0; i<this->m_Population.size();i++)
-		if(m_Population[i])
-			m_Population[i]->setFitness(m_Population[i]->getFitness()/(double)Total);
-}
-
-void CSymbolRegressDoc::makeEvaluatingFunction(int EvalNum){
+void CSymbolRegressDoc::makeEvaluatingFunction(){
 	try{
-		if (EvalFunc) delete EvalFunc;
-		CString R;
-		R.Format("%d",EvalNum);
-		((CMainFrame*)(AfxGetApp()->m_pMainWnd))->BestGeneration.SetWindowText(_T("0"));//.InsertString(-1, R);
-		
-		EvalFunc = new CEvaluatingFunction(RangeMin, RangeMax, EvalNum);
+		EvalFunc = new CEvaluatingFunction(RangeMin, RangeMax);
 		EvalFunc->generatePoints(m_CaseCount);
-			makePopulation();
 	}
 	catch(CString Mssg){
 		AfxMessageBox(Mssg);
@@ -223,8 +185,6 @@ void CSymbolRegressDoc::EvaluateAll(){
 	
     	((CMainFrame*)(AfxGetApp()->m_pMainWnd))->Progress.SetPos(0);
 	COUNTER i = 0;
-
-	COUNTER olBest = m_BestIndex;
 	m_BestIndex = 0;
 
 	try{
@@ -234,15 +194,10 @@ void CSymbolRegressDoc::EvaluateAll(){
 			this->grade(this->m_Population[i]);
 			i++;
 		}
-		//normalizeFitness();
 		for(i=0; i<this->m_Population.size();i++){
-			if(m_Population[i]->getFitness() > m_Population[m_BestIndex]->getFitness())
+			m_Population[i]->Fitness->normalizeFitness();
+			if(m_Population[i]->Fitness->getNormalizedFitness() > m_Population[m_BestIndex]->Fitness->getNormalizedFitness())
 				m_BestIndex = i;
-		}
-		if(!(*m_Population[m_BestIndex] == *m_Population[olBest])){
-			CString R;
-			R.Format("%d",this->generationCount);
-			((CMainFrame*)(AfxGetApp()->m_pMainWnd))->BestGeneration.SetWindowText(R);
 		}
 		
 	}
@@ -263,7 +218,7 @@ void CSymbolRegressDoc::Select(){
 
 	vector<CDNAStatement*> NewPopulation;       
 
-	int TotFit = (int)getTotalFitness();
+	int TotFit = (int)CFitnessClass::getTotalNormalizedFitness();
 	if(TotFit < 1) TotFit=1;
 	int ind = 0; 
 	double acc;
@@ -274,8 +229,8 @@ void CSymbolRegressDoc::Select(){
 
 	while(NewPopulation.size() < SelectionSize){
 		acc = (double)((rand()%TotFit) + 1);
-		while ((acc - this->m_Population[ind]->getFitness() > 0.0)){
-			acc -= this->m_Population[ind]->getFitness();
+		while ((acc - this->m_Population[ind]->Fitness->getNormalizedFitness()) > 0.0){
+			acc -= this->m_Population[ind]->Fitness->getNormalizedFitness();
 			ind = (ind+1)%this->m_Population.size();
 		}
 		NewPopulation.push_back(new CDNAStatement(*(this->m_Population[ind])));
@@ -302,22 +257,32 @@ void CSymbolRegressDoc::makePopulation(){
 	destroyPopulation();
 	try{
 
-	
+		
 		for(COUNTER i=0; i<this->m_FullPopulationSize; i++){
-			CDNAStatement* temp = new CDNAStatement(UNDEF);
-			temp->growCreate();
-			m_Population.push_back(temp);
-			//(m_Population[i])->growCreate();
+			this->m_Population.push_back(new CDNAStatement(UNDEF, TreeDensity));
+			this->m_Population[i]->growCreate(this->MaxDepth);
 		}
+
+		/*
+		this->m_Population.push_back(new CDNAStatement(*m_Population[0]));
+		this->m_Population[2]->setMutationProb(this->MutProb);
+		this->m_Population[2]->mutate();
+		this->m_Population.push_back(new CDNAStatement(*m_Population[1]));
+		this->m_Population[3]->setMutationProb(this->MutProb);
+		this->m_Population[3]->mutate();
+
+		 this->m_Population.push_back(
+			 &((*(this->m_Population[0]))*(*(this->m_Population[1]))));
+		*/
 
 		((CMainFrame*)(AfxGetApp()->m_pMainWnd))->Progress.SetRange(0, (m_Population.size())/10);
 		((CMainFrame*)(AfxGetApp()->m_pMainWnd))->Progress.SetStep(1);
-		((CMainFrame*)(AfxGetApp()->m_pMainWnd))->m_GenerationEdit.SetWindowText(_T("100"));
+		((CMainFrame*)(AfxGetApp()->m_pMainWnd))->m_GenerationEdit.SetWindowText(_T("0"));
 	}
 	catch(CString Msg){
 		AfxMessageBox(Msg);
 	}
-	this->UpdateAllViews(NULL);
+
 	#ifdef _DEBUG
 		CDNAMemPopup(_T("At makePopulation()\r\n"));
 	#endif
@@ -340,7 +305,7 @@ void CSymbolRegressDoc::Breed(){
 	COUNTER indMom = 0; 
         COUNTER indPop = 0;
         double acc;
-	int TotFit = (int)getTotalFitness();
+	int TotFit = (int)CFitnessClass::getTotalNormalizedFitness();
         if(TotFit < 1) TotFit=1;
 
 
@@ -354,15 +319,16 @@ void CSymbolRegressDoc::Breed(){
         while(CurrentPopSize < this->m_FullPopulationSize){
 		acc = (double)((rand()%TotFit)+1);
 
-		while ((acc - this->m_Population[indMom]->getFitness() > 0.0f)){
-			acc -= this->m_Population[indMom]->getFitness();
+		while ((acc - this->m_Population[indMom]->Fitness->getNormalizedFitness()) > 0.0f){
+			acc -= this->m_Population[indMom]->Fitness->getNormalizedFitness();
 			indMom = rand()%BegPopSize;
                 }
 		
                 
 		m_Population[indMom]->setCrossOverMaxDepth(CrossMaxDepth);
                 m_Population[indPop]->setCrossOverMaxDepth(CrossMaxDepth);
-                
+                m_Population[indPop]->setMutationProb(MutProb);
+
                 this->m_Population[CurrentPopSize]
                         = &((*(this->m_Population[indPop]))*(*(this->m_Population[indMom])));
                 
@@ -387,7 +353,7 @@ void CSymbolRegressDoc::StopEvolutionRun(){
 	EvaluateAll();	
 	CString Msg;
 	Msg.Format("Evolution run finished at generation %d\r\nTotal Fitness %f", 
-		generationCount, getTotalFitness());
+		generationCount, CFitnessClass::getTotalNormalizedFitness());
 	AfxMessageBox(Msg);
 	this->UpdateAllViews(NULL);
 }
@@ -435,7 +401,7 @@ void CSymbolRegressDoc::OnStop(){
 
 void CSymbolRegressDoc::OnSettings(){
 
-	CSettingsDialog k(NULL, this->m_funcNum, this->m_FullPopulationSize, this->SelectionSize, 
+	CSettingsDialog k(NULL, this->m_FullPopulationSize, this->SelectionSize, 
 		this->MutProb, this->MaxDepth,  this->CrossMaxDepth, 0, this->TreeDensity);
 	k.DoModal();
 
@@ -447,7 +413,6 @@ void CSymbolRegressDoc::OnSettings(){
 	this->TreeDensity = k.TreeDensity;
 	this->makePopulation();
 	this->UpdateAllViews(NULL);
-
 }
 
 

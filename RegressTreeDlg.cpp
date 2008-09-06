@@ -31,7 +31,6 @@ void CRegressTreeDlg::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(CRegressTreeDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON1, OnBnClickedButton1)
-	ON_BN_CLICKED(IDC_BUTTON2, OnBnClickedButton2)
 END_MESSAGE_MAP()
 
 BOOL CRegressTreeDlg::OnInitDialog(){
@@ -107,14 +106,5 @@ void CRegressTreeDlg::OnBnClickedButton1(){
 		AfxMessageBox(Err);
 	}
 
-
-}
-
-void CRegressTreeDlg::OnBnClickedButton2()
-{
-	DNAStat->simplify();
-	DNAStat_Tree->DeleteAllItems();
-	DNAStat->toTreeCtrl(DNAStat_Tree, DNAStat_Tree->GetRootItem());
-	ExpandTree(DNAStat_Tree->GetRootItem());
 
 }

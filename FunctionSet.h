@@ -8,28 +8,21 @@ enum GENEStatementType{
 
     //Terminals
     X_1,
-    N_0P25,
-    N_M1,
     N_1,
     N_2,
-    N_5,
-    N_0,
     N_3,
-    //Functions
-
-    PLUS,
-    DIV,     
-    MINUS,
-    MULT,
-
+    N_5,
    
-
-    INTERVAL
+    //Functions
+    PLUS,
+    MINUS,
+    DIV,
+    MULT,
 };
 
 
 #define BEGTERM (unsigned int) X_1
-#define ENDTERM (unsigned int) N_2
+#define ENDTERM (unsigned int) N_5
 
 #define BEGFUNC (unsigned int) PLUS
 #define ENDFUNC (unsigned int) MULT
@@ -89,7 +82,7 @@ class CFunctionSet{
         }
 
     static LPCTSTR TreeTag(GENEStatementType S);       
-   // static GENEStatementType fromString (const CString& Str);
+    static GENEStatementType fromString (const CString& Str);
     static unsigned int Arity(GENEStatementType S);
 
 

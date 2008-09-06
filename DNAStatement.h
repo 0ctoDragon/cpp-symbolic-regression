@@ -6,96 +6,54 @@
 #include "StdAfx.h"
 
 #define MAXARITY 15
-#define DEFAULTREEDENSITY 80
 #define DEFAULTMUTPROB 0.01f
-#define DEFAULTMAXDEPTH	10
-#define DEFAULTCROSSOVERMAXDEPTH 5
+#define DEFAULTCROSSOVERMAXDEPTH 10
 
-class StatementParameters{
-protected:
-		int Maxdepth;
-		int TreeDensity;
-		double MutationPbblty;
-public:
-	StatementParameters(int a, int b, double c){
-		this->Maxdepth=a;
-		this->TreeDensity=b;
-		this->MutationPbblty=c;
-		};
-	void setTreeDensity(int TD);
-	int getTreeDensity() const;
-	void setMaxDepth(int MD);
-	int getMaxDepth() const;
-	void setMutationProb(double Prob);
-	double getMutationProb( )const;
-	
-};
 
+
+class CFitnessClass;
 class CDNAStatement :
     public CObject
 {
-    
-	StatementParameters* Params;
-
-private:
-	void grow();
-	static int MemTrace(int t){
-                static int Mem = 0;
-                Mem += t;
-                return Mem;
-            } 
-
-protected:
-        int Maxdepth;
-		int TreeDensity;
-		double MutationPbblty;
-        COUNTER arity; 
-		GENEStatementType Type;
-		double Fitness;
        
+protected:
+        double MutationPbblty;
+        int CrossOverMaxDepth;
+        unsigned int arity; 
 
-		COUNTER CrossOverMaxDepth;
+        GENEStatementType Type;
         vector<CDNAStatement*> SubStatements; 
 
 
-		virtual void copy(const CDNAStatement& S);  
-        virtual void destroy();
-        virtual void CompleteConstruction();
-	
+	void copy(const CDNAStatement& S);  
+        void destroy();
+        void CompleteConstruction();
     
-		void addBranch(unsigned int i, const CDNAStatement& S);
+	void addBranch(unsigned int i, const CDNAStatement& S);
         bool removeBranch(unsigned int i);
-
-
+        
+            
+        static int MemTrace(int t){
+                static int Mem = 0;
+                Mem += t;
+                return Mem;
+            }    
+	int TreeDensity;
+            
 public:
-
+	CFitnessClass* Fitness;
 
 	//Set Methods
 	void setCrossOverMaxDepth(int Depth);
+	void setMutationProb(double Prob);
 	bool replaceBranch(unsigned int i, const CDNAStatement& S);
 
 	//Admins
 	// DECLARE_SERIAL( CDNAStatement );
-	CDNAStatement(GENEStatementType = UNDEF,  
-		COUNTER = DEFAULTCROSSOVERMAXDEPTH);
-
-	void setTreeDensity(int TD);
-	int getTreeDensity() const;
-	void setMaxDepth(int MD);
-	int getMaxDepth() const;
-	void setMutationProb(double Prob);
-	double getMutationProb( )const;
-
-
-
+	CDNAStatement(GENEStatementType S = UNDEF, int=50);
 	CDNAStatement(const CDNAStatement& S);
-    const CDNAStatement& operator=(const CDNAStatement& S);
+        const CDNAStatement& operator=(const CDNAStatement& S);
 	virtual ~CDNAStatement(void);
-
-
-	
-	double getFitness( )const;
-	void setFitness( double );
 
 
         //get Methods
@@ -114,8 +72,8 @@ public:
 	F<double> FromConst(GENEStatementType C);
 	void toTreeCtrl(CTreeCtrl* Tctrl, HTREEITEM branch);
 
-     
-    void growCreate();
+        void grow(unsigned int MaxDepth);
+        void growCreate(unsigned int Maxdepth);
         CString toString();
         
 	
@@ -124,8 +82,7 @@ public:
 	CDNAStatement* getBranchRandomType(COUNTER MaxDepth, FUNCTIONTYPECLASS BranchType);
 
 	void simplify();
-        
-	F<double> Eval(F<double> val);
+        F<double> Eval(F<double> val);
 	void draw(COUNTER PointsNum, double Min, double Max);
 
 };

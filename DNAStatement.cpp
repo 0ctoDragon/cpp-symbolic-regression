@@ -1,66 +1,12 @@
 #include "StdAfx.h"
+#include "FitnessClass.h"
 #include ".\dnastatement.h"
 
-void StatementParameters::setTreeDensity(int TD){
-		if((TD>30)&&(TD<=100))
-			TreeDensity=TD;
-		else
-			TreeDensity = DEFAULTREEDENSITY;
-		}
-int StatementParameters::getTreeDensity() const{return TreeDensity;}
-void StatementParameters::setMaxDepth(int MD){
-			Maxdepth=MD;
-		}
-int StatementParameters::getMaxDepth() const{return Maxdepth;}
-void StatementParameters::setMutationProb(double Prob){
-    if(Prob<0.0f) MutationPbblty = 0.0f;
-    else if(Prob>1.0f) MutationPbblty = 1.0f;
-    else MutationPbblty = Prob;
-}
-double StatementParameters::getMutationProb( )const {return MutationPbblty;}
+/*
+#define GETCONST(SomeVal) \
+    CString R (_T(#statement));\
+                return statement
 
-
-void CDNAStatement::setTreeDensity(int TD){
-		if((TD>30)&&(TD<=100))
-			TreeDensity=TD;
-		else
-			TreeDensity = DEFAULTREEDENSITY;
-		}
-int CDNAStatement::getTreeDensity() const{return TreeDensity;}
-void CDNAStatement::setMaxDepth(int MD){
-			Maxdepth=MD;
-		}
-int CDNAStatement::getMaxDepth() const{return Maxdepth;}
-void CDNAStatement::setMutationProb(double Prob){
-    if(Prob<0.0f) MutationPbblty = 0.0f;
-    else if(Prob>1.0f) MutationPbblty = 1.0f;
-    else MutationPbblty = Prob;
-}
-
-double CDNAStatement::getMutationProb( )const {return MutationPbblty;}
-double CDNAStatement::getFitness( )const {return this->Fitness;}
-void CDNAStatement::setFitness( double Fit){this->Fitness = Fit;} ;
-
-
-
-CDNAStatement::CDNAStatement(GENEStatementType S,  COUNTER MaxDepthX):
-Type(S), Fitness(0.0f), CrossOverMaxDepth(MaxDepthX){
-
-	MemTrace(1);      
-
-	this->setMaxDepth((rand()%4)+6);
-	this->setTreeDensity((rand()%20)+70);
-	this->setMutationProb((((double)(rand()%50))+100.0) / 1000.0);
-    try{
-		
-        arity = CFunctionSet::Arity(S); 
-		CompleteConstruction();
-	}
-    catch(CString Pblm){
-        throw Pblm;
-    }
-
-};
 
 /*******************************
 Admin methods
@@ -75,16 +21,18 @@ void CDNAStatement::destroy(){
         for(unsigned int i=0; i<SubStatements.size(); i++)
             delete  SubStatements[i];
 
-	Fitness = 0.0f; 
+	if(Fitness){
+		delete Fitness;
+		Fitness = NULL;
+	}
 	SubStatements.clear();
 }
 void CDNAStatement::copy(const CDNAStatement& S){
 	this->destroy();
 	arity   = S.arity; 
         Type    = S.Type;
-		TreeDensity = S.TreeDensity;
-		Maxdepth =  S.Maxdepth;
-        Fitness = S.Fitness;
+	TreeDensity = S.TreeDensity;
+        Fitness = new CFitnessClass(*(S.Fitness));
         MutationPbblty   =  S.MutationPbblty;   
         CrossOverMaxDepth = S.CrossOverMaxDepth;
         
@@ -93,18 +41,32 @@ void CDNAStatement::copy(const CDNAStatement& S){
 }
 
 
+void CDNAStatement::CompleteConstruction(){
+    while(SubStatements.size() < arity)
+        SubStatements.push_back(new CDNAStatement(UNDEF));
+    
+    MutationPbblty      = DEFAULTMUTPROB;
+    CrossOverMaxDepth   = DEFAULTCROSSOVERMAXDEPTH;
+    Fitness = new CFitnessClass();
+}
 
 const CDNAStatement& CDNAStatement::operator=(const CDNAStatement& S){
     copy(S);
     return *this;
 }
 
-
-void CDNAStatement::CompleteConstruction(){
-    while(SubStatements.size() < arity)
-        SubStatements.push_back(new CDNAStatement(UNDEF));
+CDNAStatement::CDNAStatement(GENEStatementType S, int treeDensity):
+Type(S), Fitness(NULL), TreeDensity(treeDensity){
+    
+    try{
+        arity = CFunctionSet::Arity(S);  
+        CompleteConstruction(); 
+    }
+    catch(CString Pblm){
+        throw Pblm;
+    }
+    MemTrace(1);        
 }
-
 
 
 CDNAStatement::CDNAStatement(const CDNAStatement& S):
@@ -131,6 +93,11 @@ void CDNAStatement::setCrossOverMaxDepth(int Depth){
         throw CString(_T("Illegal value for CrossOverMaxDepth at CDNAStatement::setCrossOverMaxDepth"));
 }
 
+void CDNAStatement::setMutationProb(double Prob){
+    if(Prob<0.0f) MutationPbblty = 0.0f;
+    else if(Prob>1.0f) MutationPbblty = 1.0f;
+    else MutationPbblty = Prob;
+}
 
 
 void CDNAStatement::addBranch(unsigned int branchNum, const CDNAStatement& S){
@@ -224,7 +191,7 @@ CString CDNAStatement::toString(){
 	try{
 		Res += CFunctionSet::TreeTag(Type);
 	}
-	catch(CString ErrStatement){
+	catch(LPCTSTR ErrStatement){
 				Res += ErrStatement;	
 	}
 
@@ -239,6 +206,7 @@ CString CDNAStatement::toString(){
 Random Creation Methos
 ******************************/
 
+
 void CDNAStatement::simplify(){
 
 	bool goAgain = false;
@@ -252,16 +220,8 @@ void CDNAStatement::simplify(){
 						copy(M);
 						goAgain = true;
 				}
-				else
-					if(*SubStatements[0] == *SubStatements[1]){
-						this->copy(CDNAStatement(N_1));
-						goAgain = true;
-					}
-					else
-						if(SubStatements[0]->Type == N_0){
-							this->copy(CDNAStatement(N_0));
-							goAgain = true;
-						}
+
+
 				break;
 			 }
 			case MULT:{
@@ -275,38 +235,8 @@ void CDNAStatement::simplify(){
 						CDNAStatement M(*SubStatements[0]);
 						copy(M);
 						goAgain = true;
-					}else
-						if((SubStatements[0]->Type == N_0)||(SubStatements[1]->Type == N_0)){
-							copy(CDNAStatement(N_0));
-							goAgain = true;
-						}
+					}
 				break;	
-			}
-			case PLUS:{
-				if(SubStatements[0]->Type == N_0){
-					CDNAStatement M(*SubStatements[1]);
-					copy(M);
-					goAgain = true;
-				}
-				else if(SubStatements[1]->Type == N_0){
-					CDNAStatement M(*SubStatements[0]);
-					copy(M);
-					goAgain = true;
-				}
-
-				break;
-			}
-			case MINUS:{	
-				if(*SubStatements[0] == *SubStatements[1]){
-						this->copy(CDNAStatement(N_0));
-						goAgain = true;
-				}
-				else if(SubStatements[1]->Type == N_0){
-						CDNAStatement M(*SubStatements[0]);
-						copy(M);
-						goAgain = true;
-				}
-				break;
 			}
 	}
 	if(goAgain) simplify();
@@ -314,12 +244,10 @@ void CDNAStatement::simplify(){
 
 
 
-void CDNAStatement::grow(){
+void CDNAStatement::grow(COUNTER MaxDepth){
     try{
-		for(unsigned int i = 0; i < SubStatements.size(); i++){
-			SubStatements[i]->setMaxDepth(this->getMaxDepth()-1);
-			SubStatements[i]->growCreate();       
-			}
+		for(unsigned int i = 0; i < SubStatements.size(); i++)
+			SubStatements[i]->growCreate(MaxDepth - 1);        
     }
     catch(CString Ecx){
         CString R(_T(" at CDNAStatement::grow-->\r\n"));
@@ -328,36 +256,19 @@ void CDNAStatement::grow(){
     }
 }
 
-void CDNAStatement::growCreate(){
+void CDNAStatement::growCreate(COUNTER Maxdepth){
 	//If at the end, we need a terminal.
-    //If not at the end, we might get a Terminal 
-    //or a function. So i flip a coin	
-	
-	double TempProb = this->getMutationProb();
-	int TempMaxDepth = this->getMaxDepth();
-	int  TempTreeDensity = this->getTreeDensity();
-    
-	
-	if((this->Maxdepth + 1 <= 0)||((rand()%100 >= this->TreeDensity))){
-		copy(CDNAStatement(CFunctionSet::getRandTerminal()));
-		this->setMutationProb(TempProb);
-		this->setMaxDepth(TempMaxDepth);
-		this->setTreeDensity(TempTreeDensity);
-		return;
+        //If not at the end, we might get a Terminal 
+        //or a function. So i flip a coin
+        if((Maxdepth + 1 <= 0)||((rand()%100 >= TreeDensity))){
+                copy(CDNAStatement(CFunctionSet::getRandTerminal()));
+                return;
 	}
-
-
 	this->copy(CDNAStatement (CFunctionSet::getRandFunction()));
-	this->setMutationProb(TempProb);
-	this->setMaxDepth(TempMaxDepth);
-	this->setTreeDensity(TempTreeDensity);
-	
+
 	for(COUNTER i = 0; i<this->SubStatements.size(); i++){
 		try{
-			SubStatements[i]->setMaxDepth(this->getMaxDepth()-1);
-			SubStatements[i]->setTreeDensity(this->getTreeDensity());
-			SubStatements[i]->setMutationProb(this->getMutationProb());
-			this->SubStatements[i]->growCreate();
+			this->SubStatements[i]->growCreate(Maxdepth-1);
 		}
 		catch(CString Err){
 			CString R(_T(" at CDNAStatement::growCreate\r\n"));
@@ -397,17 +308,15 @@ F<double> CDNAStatement::Eval(F<double> val){
 		                
 			case DIV:{
 					F<double> Den = SubStatements[1]->Eval(val); 
-					if( Den == 0.0f) return 1.0f;
+					if( Den == 0.0f) throw CString(_T("UNDEF"));
 					return  SubStatements[0]->Eval(val) / Den;
 				}
 			case MULT:
 				return  SubStatements[0]->Eval(val) * SubStatements[1]->Eval(val);
-		               
-			case N_M1: return -1.0f;
-			case N_0: return 0.0f;
-			case N_0P25: return 0.25f;
-			case N_1: //return 1.0;
-			case N_2: //return -1.0;
+		                
+			
+			case N_1:
+			case N_2:
 			case N_3:
 			case N_5:
 				return FromConst(Type);
@@ -438,10 +347,7 @@ Breeding Methods
 CDNAStatement& CDNAStatement::operator*(CDNAStatement& Dad) {
 
         CDNAStatement* Kid = new CDNAStatement(*this);
-        Kid->setMutationProb((Dad.getMutationProb()+this->getMutationProb())/2.0);
-		Kid->setTreeDensity((this->TreeDensity+Dad.getTreeDensity())/2);
-		Kid->setMaxDepth((this->getMaxDepth() + Dad.getMaxDepth())/2);
-
+        
         unsigned int DadDepth = Dad.getDepth();
         unsigned int MomDepth = getDepth();
         int CrossDepthKid = (rand()%this->CrossOverMaxDepth)%
@@ -468,9 +374,8 @@ CDNAStatement& CDNAStatement::operator*(CDNAStatement& Dad) {
             }
         }
         
-	
 	Kid->mutate();
-	Kid->Fitness = 0.0f;
+	Kid->Fitness->reset();
         return *Kid;
 
  }
@@ -479,9 +384,6 @@ void CDNAStatement::mutate(){
 	int MutProb = (int)(MutationPbblty *1000.0f);
 	
 	while(rand()%1000 < MutProb){
-		this->setMutationProb(this->getMutationProb() + ((rand()%10)?0:0.005));
-		this->setTreeDensity(this->getTreeDensity()+((rand()%10)?0:1));
-		this->setMaxDepth(this->getMaxDepth()+((rand()%10)?0:1));
 		int MutDepthKid = (rand()%getDepth())+1;
 		CDNAStatement* MutPart = NULL;
 		switch(rand()%2){
@@ -509,17 +411,14 @@ void CDNAStatement::mutate(){
 						T = CDNAStatement(CFunctionSet::getRandFunction());
 						switch(rand()%2){
 							case 0:
-								T.setMaxDepth(MutPart->getDepth());
-								T.grow();		
+								T.grow(MutPart->getDepth());		
 								break;
 							case 1:{
 								int index = rand()%T.SubStatements.size();
 								T.SubStatements[index]->copy(*MutPart);
 								for(COUNTER i=0; i<T.SubStatements.size();i++)
-									if(i != index){
-										T.SubStatements[i]->setMaxDepth(MutPart->getDepth());
-										T.SubStatements[i]->growCreate();	
-										}
+									if(i != index)
+										T.SubStatements[i]->growCreate(MutPart->getDepth());	
 								break;
 							       }
 						}		
@@ -529,8 +428,6 @@ void CDNAStatement::mutate(){
 			MutProb /= 2;
 		}
 	}
-
-	if(rand()%3 == 0) simplify();
 }
  
  CDNAStatement* CDNAStatement::getBranchRandomType(COUNTER MaxDepth, FUNCTIONTYPECLASS BranchType){

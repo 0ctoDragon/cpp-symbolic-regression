@@ -67,7 +67,7 @@ void CPopulationStringView::UpdateList(){
 		strText.Format(TEXT("%d"), i);
 		ListCtrl->SetItemText(i, 0,strText);
 		if(DocPtr->m_Population[i]){
-			strText.Format(TEXT("%f"), DocPtr->m_Population[i]->getFitness());
+			strText.Format(TEXT("%f"), DocPtr->m_Population[i]->Fitness->getNormalizedFitness());
 			ListCtrl->SetItemText(i, 1, strText);
 			ListCtrl->SetItemText(i, 2, DocPtr->m_Population[i]->toString());
 		}

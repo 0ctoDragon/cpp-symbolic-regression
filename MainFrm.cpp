@@ -65,23 +65,18 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	
 	
 	
-	m_GenerationEdit.Create(!ES_READONLY , CRect(0,0,30,20),this, ID_GENEDIT);
-	BestGeneration.Create(!ES_READONLY , CRect(0,0,100,20),this, ID_FUNCCHOOSE);
-	
-
+	m_GenerationEdit.Create(!ES_READONLY , CRect(0,0,50,20),this, ID_GENEDIT);
 	m_EvolutionBar.Create(this, RBS_BANDBORDERS);
 	m_EvolutionBar.AddBar(&m_GenerationEdit, "EvolveTo", NULL, 
             !RBBS_BREAK | RBBS_GRIPPERALWAYS);
-	m_EvolutionBar.AddBar(&BestGeneration, "Best Found in Generation", NULL, 
-            !RBBS_BREAK | RBBS_GRIPPERALWAYS);
+   
 	
 	Progress.Create(!PBS_SMOOTH, CRect(0,0,150,20), this, ID_PROG);
 	m_ProgressBar.Create(this, RBS_BANDBORDERS);
 	m_ProgressBar.AddBar(&Progress, "Progress", NULL,
             !RBBS_BREAK | RBBS_GRIPPERALWAYS);
    
-	
-			
+
 
 
 
