@@ -220,20 +220,19 @@ Drawing Routines
 *******************************/
 void GraphView::RenderScene(){
 
-	GLfloat Scalefactor = 0.2f;
+	GLfloat Scalefactor = 0.1f;
 	glPushMatrix();
 	glScalef(Scalefactor, Scalefactor, Scalefactor);
 
 	try{
-		/*glColor3f(0.7f, 0.6f, 0.2f);
-		DocPtr->m_Population[DocPtr->m_CurrentIndividual]->draw(60, DocPtr->RangeMin, DocPtr->RangeMax);*/
-
-		glColor3f(0.0f, 0.0f, 1.0f);
-		DocPtr->m_Population[DocPtr->m_BestIndex]->draw(60, DocPtr->RangeMin, DocPtr->RangeMax);
-		
 		if(DocPtr->EvalFunc)
 			DocPtr->EvalFunc->draw();
 		
+		glColor3f(0.0f, 0.0f, 1.0f);
+		DocPtr->m_Population[DocPtr->m_BestIndex]->draw(60, DocPtr->RangeMin, DocPtr->RangeMax);
+
+		glColor3f(0.7f, 0.6f, 0.2f);
+		DocPtr->m_Population[DocPtr->m_CurrentIndividual]->draw(60, DocPtr->RangeMin, DocPtr->RangeMax);
 	}
 	catch(CString Msg){
 		

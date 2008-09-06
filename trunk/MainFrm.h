@@ -20,8 +20,6 @@ public:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	CEdit m_GenerationEdit;
 	CProgressCtrl Progress;
-	CEdit BestGeneration;
-
 // Implementation
 public:
 	virtual ~CMainFrame();

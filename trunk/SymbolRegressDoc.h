@@ -10,19 +10,14 @@ class GraphView;
 class CSymbolRegressDoc : public CDocument
 {
 protected: // create from serialization only
-	CSymbolRegressDoc(COUNTER Popsize = 500, COUNTER Selsize=100, 
-					COUNTER maxDepth = 7, COUNTER Cmadept = 4, 
-					double MPro = 0.4f, COUNTER treeDensity= 80,
-					COUNTER m_FuncNum=1);
+	CSymbolRegressDoc(COUNTER Popsize = 300, COUNTER Selsize=60, 
+					COUNTER maxDepth = 10, COUNTER Cmadept = 5, double MPro = 0.2f, COUNTER = 50);
 	DECLARE_DYNCREATE(CSymbolRegressDoc)
 
-	double getTotalFitness();
-	void normalizeFitness();
+	
 	
 	COUNTER m_CaseCount;
-
-	
-	void makeEvaluatingFunction(int EvalNum);
+	void makeEvaluatingFunction();
 	double grade(CDNAStatement* Stat);
 	void EvaluateAll();
 
@@ -39,7 +34,7 @@ protected: // create from serialization only
 	
 	COUNTER MaxDepth;
 	COUNTER TreeDensity;
-	COUNTER m_funcNum;
+	
 	
 
 	COUNTER generationCount;
@@ -81,15 +76,6 @@ protected:
 	afx_msg void onGo();
 	afx_msg void OnStop();
 	afx_msg void OnSettings();
-	afx_msg void makeEvaluatingFunction0(){makeEvaluatingFunction(0);};
-	afx_msg void makeEvaluatingFunction1(){makeEvaluatingFunction(1);};
-	afx_msg void makeEvaluatingFunction2(){makeEvaluatingFunction(2);};
-	afx_msg void makeEvaluatingFunction3(){makeEvaluatingFunction(3);};
-	afx_msg void makeEvaluatingFunction4(){makeEvaluatingFunction(4);};
-	afx_msg void makeEvaluatingFunction5(){makeEvaluatingFunction(5);};
-	afx_msg void makeEvaluatingFunction6(){makeEvaluatingFunction(6);};
-	afx_msg void makeEvaluatingFunction7(){makeEvaluatingFunction(7);};
-	afx_msg void makeEvaluatingFunction8(){makeEvaluatingFunction(8);};
 };
 
 

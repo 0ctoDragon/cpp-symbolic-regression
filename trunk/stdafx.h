@@ -56,9 +56,6 @@ using namespace std;
 #include "badiff.h"
 #include "fadiff.h"
 
-
-
-
 #define COUNTER unsigned int
 #define OVERFLOW	(double) 20000.0f
 #define UNDERFLOW	(double) -20000.0f
